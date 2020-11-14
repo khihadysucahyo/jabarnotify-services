@@ -10,10 +10,9 @@ import (
 //GetEnv func
 func GetEnv(key string) string {
 	// load .env file
-	err := godotenv.Load("../.env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
+	switch godotenv.Load() {
+	case godotenv.Load("../.env"):
+		log.Println("Error loading .env file")
 	}
 	return os.Getenv(key)
 }
