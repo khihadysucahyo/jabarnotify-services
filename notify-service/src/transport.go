@@ -33,15 +33,15 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	r.Methods("GET").Path("/message-notifications").Handler(kithttp.NewServer(
-		siteEndpoints.GetMessageNotification,
+	r.Methods("GET").Path("/notifications").Handler(kithttp.NewServer(
+		siteEndpoints.GetNotification,
 		decodeGetNotifRequest,
 		encodeResponse,
 		options...,
 	))
 
-	r.Methods("POST", "OPTIONS").Path("/message-notifications").Handler(kithttp.NewServer(
-		siteEndpoints.CreateMessageNotification,
+	r.Methods("POST", "OPTIONS").Path("/notifications").Handler(kithttp.NewServer(
+		siteEndpoints.CreateNotification,
 		decodeCreateNotifRequest,
 		encodeResponse,
 		options...,
@@ -52,12 +52,12 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 }
 
 func decodeGetNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req MessageNotificationRequest
+	var req NotificationRequest
 	return req, nil
 }
 
 func decodeCreateNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req CreateMessageNotificationRequest
+	var req CreateNotificationRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e
 	}

@@ -21,16 +21,22 @@ type loggingMiddleware struct {
 	next   SiteService
 }
 
-func (mw loggingMiddleware) GetMessageNotification(ctx context.Context) (t []*MessageNotification, err error) {
+func (mw loggingMiddleware) GetNotification(ctx context.Context) (t []*Notification, err error) {
 	defer func() {
-		mw.logger.Log("method", "GetMessageNotification", "notif", "", "err", err)
+		mw.logger.Log("method", "GetNotification", "notif", "", "err", err)
 	}()
-	return mw.next.GetMessageNotification(ctx)
+	return mw.next.GetNotification(ctx)
 }
 
-func (mw loggingMiddleware) CreateMessageNotification(ctx context.Context, msg string, mtd string) (t *MessageNotification, err error) {
+func (mw loggingMiddleware) CreateNotification(
+	ctx context.Context,
+	emailAddress string,
+	phoneNumber string,
+	body string,
+	subject string,
+	typ string) (t *Notification, err error) {
 	defer func() {
-		mw.logger.Log("method", "CreateMessageNotification", "notif", "", "err", err)
+		mw.logger.Log("method", "CreateNotification", "notif", "", "err", err)
 	}()
-	return mw.next.CreateMessageNotification(ctx, msg, mtd)
+	return mw.next.CreateNotification(ctx, emailAddress, phoneNumber, body, subject, typ)
 }

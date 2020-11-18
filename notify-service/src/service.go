@@ -12,18 +12,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// MessageNotification schema
-type MessageNotification struct {
-	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Message   string             `json:"message,omitempty" bson:"message,omitempty" binding:"required"`
-	Method    string             `json:"method,omitempty" bson:"method,omitempty" binding:"required"`
-	CreatedAt time.Time          `json:"created_at,omitempty" bson:"created_at,omitempty" binding:"required"`
+//Notification schema
+type Notification struct {
+	ID           primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	EmailAddress string             `json:"emailAddress,omitempty" bson:"emailAddress,omitempty"`
+	PhoneNumber  string             `json:"phoneNumber,omitempty" bson:"phoneNumber,omitempty"`
+	Body         string             `json:"body,omitempty" bson:"body,omitempty" binding:"required"`
+	Subject      string             `json:"subject,omitempty" bson:"subject,omitempty"`
+	Type         string             `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
+	Status       string             `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
+	SendAt       time.Time          `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
 }
 
 //SiteService describe the Stats service
 type SiteService interface {
-	GetMessageNotification(ctx context.Context) ([]*MessageNotification, error)
-	CreateMessageNotification(ctx context.Context, msg string, mtd string) (*MessageNotification, error)
+	GetNotification(ctx context.Context) ([]*Notification, error)
+	CreateNotification(
+		ctx context.Context,
+		emailAddress string,
+		phoneNumber string,
+		body string,
+		subject string,
+		typ string) (*Notification, error)
 }
 
 // NewSiteService returns a basic StatsService with all of the expected middlewares wired in.
@@ -52,8 +63,8 @@ var (
 )
 
 //GetNotif display notif list
-func (s *basicService) GetMessageNotification(ctx context.Context) ([]*MessageNotification, error) {
-	collection := s.DB.Collection("messagenotifications")
+func (s *basicService) GetNotification(ctx context.Context) ([]*Notification, error) {
+	collection := s.DB.Collection("notifications")
 
 	result, err := collection.Aggregate(ctx, mongo.Pipeline{})
 
@@ -61,7 +72,7 @@ func (s *basicService) GetMessageNotification(ctx context.Context) ([]*MessageNo
 		panic(err)
 	}
 
-	var data []*MessageNotification
+	var data []*Notification
 
 	if err = result.All(ctx, &data); err != nil {
 		panic(err)
@@ -71,19 +82,29 @@ func (s *basicService) GetMessageNotification(ctx context.Context) ([]*MessageNo
 }
 
 //CreateNotif display notif list
-func (s *basicService) CreateMessageNotification(ctx context.Context, msg string, mtd string) (*MessageNotification, error) {
-	messageNotification := &MessageNotification{
-		Message: msg,
-		Method:  mtd,
+func (s *basicService) CreateNotification(
+	ctx context.Context,
+	emailAddress string,
+	phoneNumber string,
+	body string,
+	subject string,
+	typ string) (*Notification, error) {
+	notification := &Notification{
+		EmailAddress: emailAddress,
+		PhoneNumber:  phoneNumber,
+		Body:         body,
+		Subject:      subject,
+		Type:         typ,
+		Status:       "sending",
 	}
 
-	collection := s.DB.Collection("messagenotifications")
-	insertResult, err := collection.InsertOne(context.TODO(), messageNotification)
+	collection := s.DB.Collection("notifications")
+	insertResult, err := collection.InsertOne(context.TODO(), notification)
 
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Printf("type %T", insertResult)
-	return messageNotification, nil
+	return notification, nil
 }

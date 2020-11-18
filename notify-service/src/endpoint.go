@@ -8,52 +8,55 @@ import (
 
 //Endpoints holds all Stats Service enpoints
 type Endpoints struct {
-	GetMessageNotification    endpoint.Endpoint
-	CreateMessageNotification endpoint.Endpoint
+	GetNotification    endpoint.Endpoint
+	CreateNotification endpoint.Endpoint
 }
 
 //MakeSiteEndpoints initialize all service Endpoints
 func MakeSiteEndpoints(s SiteService) Endpoints {
 	return Endpoints{
-		GetMessageNotification:    makeGetMessageNotificationEndpoint(s),
-		CreateMessageNotification: makeCreateMessageNotificationEndpoint(s),
+		GetNotification:    makeGetNotificationEndpoint(s),
+		CreateNotification: makeCreateNotificationEndpoint(s),
 	}
 }
 
-//MessageNotificationRequest holds the request params for ListTables
-type MessageNotificationRequest struct {
+//NotificationRequest holds the request params for ListTables
+type NotificationRequest struct {
 	Method string
 }
 
-//MessageNotificationReply holds the response params for ListTables
-type MessageNotificationReply struct {
-	Items []*MessageNotification `json:"items"`
-	Err   error                  `json:"err"`
+//NotificationReply holds the response params for ListTables
+type NotificationReply struct {
+	Items []*Notification `json:"items"`
+	Err   error           `json:"err"`
 }
 
-//CreateMessageNotificationRequest holds the request params for ListTables
-type CreateMessageNotificationRequest struct {
-	Message string `json:"message"`
-	Method  string `json:"method"`
+//CreateNotificationRequest holds the request params for ListTables
+type CreateNotificationRequest struct {
+	EmailAddress string
+	PhoneNumber  string
+	Body         string
+	Subject      string
+	Type         string
 }
 
-//CreateMessageNotificationReply holds the response params for ListTables
-type CreateMessageNotificationReply struct {
-	Item *MessageNotification `json:"item"`
-	Err  error                `json:"err"`
+//CreateNotificationReply holds the response params for ListTables
+type CreateNotificationReply struct {
+	Item *Notification `json:"item"`
+	Err  error         `json:"err"`
 }
 
-func makeGetMessageNotificationEndpoint(s SiteService) endpoint.Endpoint {
+func makeGetNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		res, err := s.GetMessageNotification(ctx)
-		return MessageNotificationReply{Items: res, Err: err}, nil
+		res, err := s.GetNotification(ctx)
+		return NotificationReply{Items: res, Err: err}, nil
 	}
 }
 
-func makeCreateMessageNotificationEndpoint(s SiteService) endpoint.Endpoint {
+func makeCreateNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateMessageNotificationRequest)
-		result, err := s.CreateMessageNotification(ctx, req.Message, req.Method)
-		return CreateMessageNotificationReply{Item: result, Err: err}, nil
+		req := request.(CreateNotificationRequest)
+		result, err := s.CreateNotification(ctx, req.EmailAddress, req.PhoneNumber, req.Body, req.Subject, req.Type)
+		return CreateNotificationReply{Item: result, Err: err}, nil
 	}
 }
