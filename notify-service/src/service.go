@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/go-kit/kit/log"
 	"github.com/jabardigitalservice/jabarnotify-services/notify-service/src/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,6 +66,42 @@ var (
 	ErrLoadNotif = errors.New("error retriving notif")
 )
 
+func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
+	sess := session.New(&aws.Config{
+		Region: aws.String(utils.GetEnv("AWS_DEFAULT_REGION")),
+		Credentials: credentials.NewStaticCredentials(
+			utils.GetEnv("AWS_ACCESS_KEY_ID"),
+			utils.GetEnv("AWS_SECRET_ACCESS_KEY"), "",
+		),
+		MaxRetries: aws.Int(5),
+	})
+
+	svc := sqs.New(sess)
+
+	confQueue, _ := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName: aws.String(queueName),
+	})
+
+	result, err := svc.SendMessage(&sqs.SendMessageInput{
+		DelaySeconds: aws.Int64(10),
+		MessageAttributes: map[string]*sqs.MessageAttributeValue{
+			"PhoneNumber": &sqs.MessageAttributeValue{
+				DataType:    aws.String("String"),
+				StringValue: aws.String(phoneNumber),
+			},
+		},
+		MessageBody: aws.String(body),
+		QueueUrl:    aws.String(*confQueue.QueueUrl),
+	})
+
+	if err != nil {
+		fmt.Println("Error", err)
+	}
+
+	fmt.Println("Success", *result.MessageId)
+
+}
+
 //GetNotif display notif list
 func (s *basicService) GetNotification(ctx context.Context) ([]*Notification, error) {
 	collection := s.DB.Collection("notifications")
@@ -103,6 +143,10 @@ func (s *basicService) CreateNotification(
 
 	if err != nil {
 		return nil, err
+	}
+
+	if typ == "sms" {
+		pushNotifToPhoneNumber("smsblast-queue", phoneNumber, body)
 	}
 
 	fmt.Printf("type %T", insertResult)
