@@ -34,7 +34,7 @@ type NotificationReply struct {
 //CreateNotificationRequest holds the request params for ListTables
 type CreateNotificationRequest struct {
 	EmailAddress string
-	PhoneNumber  string
+	PhoneNumber  []string
 	Body         string
 	Subject      string
 	Type         string

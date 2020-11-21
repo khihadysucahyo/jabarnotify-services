@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -35,7 +36,7 @@ type SiteService interface {
 	CreateNotification(
 		ctx context.Context,
 		emailAddress string,
-		phoneNumber string,
+		phoneNumber []string,
 		body string,
 		subject string,
 		typ string) (*Notification, error)
@@ -64,9 +65,25 @@ type basicService struct {
 var (
 	//ErrLoadNotif unable to find the requested team
 	ErrLoadNotif = errors.New("error retriving notif")
+	//ErrRequest unable to find the requested team
+	ErrRequest = errors.New("error request")
 )
 
-func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
+func getQueueName(typ string) string {
+	queueName := ""
+
+	switch typ {
+	case "sms":
+		queueName = "smsblast-queue"
+	case "whatsapp":
+		queueName = "wablast-queue"
+	}
+
+	return queueName
+}
+
+func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) (interface{}, error) {
+
 	sess := session.New(&aws.Config{
 		Region: aws.String(utils.GetEnv("AWS_DEFAULT_REGION")),
 		Credentials: credentials.NewStaticCredentials(
@@ -98,7 +115,8 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
 		fmt.Println("Error", err)
 	}
 
-	fmt.Println("Success", *result.MessageId)
+	fmt.Println("succeed", *result.MessageId)
+	return *result.MessageId, nil
 
 }
 
@@ -125,13 +143,13 @@ func (s *basicService) GetNotification(ctx context.Context) ([]*Notification, er
 func (s *basicService) CreateNotification(
 	ctx context.Context,
 	emailAddress string,
-	phoneNumber string,
+	phoneNumber []string,
 	body string,
 	subject string,
 	typ string) (*Notification, error) {
 	notification := &Notification{
 		EmailAddress: emailAddress,
-		PhoneNumber:  phoneNumber,
+		PhoneNumber:  strings.Join(phoneNumber, ","),
 		Body:         body,
 		Subject:      subject,
 		Type:         typ,
@@ -145,8 +163,14 @@ func (s *basicService) CreateNotification(
 		return nil, err
 	}
 
-	if typ == "sms" {
-		pushNotifToPhoneNumber("smsblast-queue", phoneNumber, body)
+	queueName := getQueueName(typ)
+
+	if queueName == "" || len(phoneNumber) < 1 {
+		return nil, ErrRequest
+	}
+
+	for _, n := range phoneNumber {
+		pushNotifToPhoneNumber(queueName, n, body)
 	}
 
 	fmt.Printf("type %T", insertResult)

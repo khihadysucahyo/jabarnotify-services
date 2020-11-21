@@ -31,7 +31,7 @@ func (mw loggingMiddleware) GetNotification(ctx context.Context) (t []*Notificat
 func (mw loggingMiddleware) CreateNotification(
 	ctx context.Context,
 	emailAddress string,
-	phoneNumber string,
+	phoneNumber []string,
 	body string,
 	subject string,
 	typ string) (t *Notification, err error) {
