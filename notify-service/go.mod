@@ -4,10 +4,13 @@ go 1.15
 
 require (
 	github.com/aws/aws-sdk-go v1.34.28
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-kit/kit v0.10.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.3.0
+	github.com/lestrrat-go/jwx v0.9.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	go.mongodb.org/mongo-driver v1.4.3
 	google.golang.org/grpc v1.33.2
 )

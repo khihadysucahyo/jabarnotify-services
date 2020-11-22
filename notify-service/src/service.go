@@ -67,6 +67,10 @@ var (
 	ErrLoadNotif = errors.New("error retriving notif")
 	//ErrRequest unable to find the requested team
 	ErrRequest = errors.New("error request")
+	//ErrUnauthorized unable to verify token
+	ErrUnauthorized = errors.New("Unauthorized")
+	//ErrExpiredToken handle expiredToken
+	ErrExpiredToken = errors.New("Token is expired")
 )
 
 func getQueueName(typ string) string {

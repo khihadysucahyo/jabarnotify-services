@@ -6,11 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-kit/kit/log"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/jabardigitalservice/jabarnotify-services/notify-service/src/utils"
+	"github.com/lestrrat-go/jwx/jwk"
 )
 
 var (
@@ -52,11 +56,19 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 }
 
 func decodeGetNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	if errToken := verifyToken(r.Header.Get("Authorization")); errToken != nil {
+		return nil, errToken
+	}
+
 	var req NotificationRequest
 	return req, nil
 }
 
 func decodeCreateNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	if errToken := verifyToken(r.Header.Get("Authorization")); errToken != nil {
+		return nil, errToken
+	}
+
 	var req CreateNotificationRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e
@@ -69,10 +81,6 @@ type errorer interface {
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
 }
@@ -83,7 +91,6 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(codeFrom(err))
-	fmt.Println("shshs")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})
@@ -93,7 +100,42 @@ func codeFrom(err error) int {
 	switch err {
 	case ErrLoadNotif:
 		return http.StatusBadRequest
+	case ErrUnauthorized:
+		return http.StatusUnauthorized
+	case ErrExpiredToken:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}
+}
+
+func getKey(token *jwt.Token) (interface{}, error) {
+
+	set, err := jwk.FetchHTTP(utils.GetEnv("KEYCLOAK_CERTS_URI"))
+	if err != nil {
+		return nil, err
+	}
+
+	keyID, ok := token.Header["kid"].(string)
+	if !ok {
+		return nil, errors.New("expecting JWT header to have string kid")
+	}
+
+	if key := set.LookupKeyID(keyID); len(key) == 1 {
+		return key[0].Materialize()
+	}
+
+	return nil, fmt.Errorf("unable to find key %q", keyID)
+}
+
+func verifyToken(reqToken string) error {
+
+	tokenString := strings.Replace(reqToken, "Bearer ", "", -1)
+	_, err := jwt.Parse(tokenString, getKey)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

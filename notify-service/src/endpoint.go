@@ -49,7 +49,7 @@ type CreateNotificationReply struct {
 func makeGetNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		res, err := s.GetNotification(ctx)
-		return NotificationReply{Items: res, Err: err}, nil
+		return NotificationReply{Items: res, Err: err}, err
 	}
 }
 
@@ -57,6 +57,6 @@ func makeCreateNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNotificationRequest)
 		result, err := s.CreateNotification(ctx, req.EmailAddress, req.PhoneNumber, req.Body, req.Subject, req.Type)
-		return CreateNotificationReply{Item: result, Err: err}, nil
+		return CreateNotificationReply{Item: result, Err: err}, err
 	}
 }
