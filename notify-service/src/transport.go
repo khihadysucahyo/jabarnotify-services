@@ -25,7 +25,7 @@ var (
 // MakeHTTPHandler wires endpoints to the HTTP transport.
 func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 	cors := handlers.CORS(
-		handlers.AllowedHeaders([]string{"content-type"}),
+		handlers.AllowedHeaders([]string{"Authorization", "content-type"}),
 		handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowCredentials(),
 		handlers.AllowedMethods([]string{"OPTIONS", "GET", "HEAD", "POST", "PUT"}),
