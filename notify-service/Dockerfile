@@ -19,16 +19,13 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o main ./cmd/.
+RUN go build -o main ./src/.
 
 # Move to /dist directory as the place for resulting binary folder
 WORKDIR /dist
 
 # Copy binary from build to main folder
 RUN cp /build/main .
-
-## Copy env from build to dist folder
-RUN cp /build/.env .
 
 # STAGE 2
 # generate clean, final image for end users
