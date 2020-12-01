@@ -13,6 +13,7 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/jabardigitalservice/jabarnotify-services/notify-service/src/utils"
 	"github.com/lestrrat-go/jwx/jwk"
 )
@@ -21,6 +22,8 @@ var (
 	// ErrBadRouting is returned when an expected path variable is missing.
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler")
 )
+
+var decoder = schema.NewDecoder()
 
 // MakeHTTPHandler wires endpoints to the HTTP transport.
 func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
@@ -51,6 +54,13 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		options...,
 	))
 
+	r.Methods("POST", "OPTIONS").Path("/notifications/import").Handler(kithttp.NewServer(
+		siteEndpoints.CreateNotification,
+		decodeImportNotifRequest,
+		encodeResponse,
+		options...,
+	))
+
 	r.Use(cors)
 	return r
 }
@@ -73,6 +83,35 @@ func decodeCreateNotifRequest(_ context.Context, r *http.Request) (request inter
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e
 	}
+	return req, nil
+}
+
+func decodeImportNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	if errToken := verifyToken(r.Header.Get("Authorization")); errToken != nil {
+		return nil, errToken
+	}
+
+	var req CreateNotificationRequest
+
+	r.FormValue("Body")
+	delete(r.PostForm, "attachment")
+
+	rows, err := utils.ExtractSheet(r, "attachment")
+	if err != nil {
+		return nil, err
+	}
+
+	var phoneNumbers []string
+	for _, row := range rows[1:] {
+		phoneNumbers = append(phoneNumbers, row[0])
+	}
+
+	r.PostForm["phoneNumber"] = phoneNumbers
+
+	if e := decoder.Decode(&req, r.PostForm); e != nil {
+		return nil, e
+	}
+
 	return req, nil
 }
 
