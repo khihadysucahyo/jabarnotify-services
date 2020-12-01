@@ -108,7 +108,7 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) (
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"PhoneNumber": &sqs.MessageAttributeValue{
 				DataType:    aws.String("String"),
-				StringValue: aws.String(phoneNumber),
+				StringValue: aws.String(utils.CleanPhoneNumber(phoneNumber)),
 			},
 		},
 		MessageBody: aws.String(body),

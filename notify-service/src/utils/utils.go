@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
@@ -42,6 +43,13 @@ func StringWithCharset(length int, charset string) string {
 // String func
 func String(length int) string {
 	return StringWithCharset(length, charset)
+}
+
+// CleanPhoneNumber func
+func CleanPhoneNumber(phoneNumber string) string {
+	re := regexp.MustCompile("^0{1}")
+
+	return re.ReplaceAllString(phoneNumber, "62")
 }
 
 // ExtractSheet func

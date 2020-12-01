@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
-	github.com/jabardigitalservice/picasso-backend/service-golang v0.0.0-20201121032436-fab5b7fad07f
 	github.com/joho/godotenv v1.3.0
 	github.com/lestrrat-go/jwx v0.9.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
