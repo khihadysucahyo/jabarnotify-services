@@ -170,7 +170,20 @@ func getKey(token *jwt.Token) (interface{}, error) {
 func verifyToken(reqToken string) error {
 
 	tokenString := strings.Replace(reqToken, "Bearer ", "", -1)
-	_, err := jwt.Parse(tokenString, getKey)
+	token, err := jwt.Parse(tokenString, getKey)
+
+	claims := token.Claims.(jwt.MapClaims)
+	resourceAccess := claims["resource_access"].(map[string]interface{})
+
+	userSession["user"] = map[string]interface{}{
+		"_id":      claims["sub"],
+		"username": claims["preferred_username"],
+		"email":    claims["email"],
+	}
+
+	userSession["meta"] = map[string]interface{}{
+		"resourceAccess": resourceAccess,
+	}
 
 	if err != nil {
 		return err

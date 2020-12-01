@@ -17,17 +17,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+var userSession = make(map[string]map[string]interface{})
+
 //Notification schema
 type Notification struct {
-	ID           primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	EmailAddress string             `json:"emailAddress,omitempty" bson:"emailAddress,omitempty"`
-	PhoneNumber  string             `json:"phoneNumber,omitempty" bson:"phoneNumber,omitempty"`
-	Body         string             `json:"body,omitempty" bson:"body,omitempty" binding:"required"`
-	Subject      string             `json:"subject,omitempty" bson:"subject,omitempty"`
-	Type         string             `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
-	Status       string             `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
-	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
-	SendAt       time.Time          `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
+	ID           primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
+	EmailAddress string                 `json:"emailAddress,omitempty" bson:"emailAddress,omitempty"`
+	PhoneNumber  string                 `json:"phoneNumber,omitempty" bson:"phoneNumber,omitempty"`
+	Body         string                 `json:"body,omitempty" bson:"body,omitempty" binding:"required"`
+	Subject      string                 `json:"subject,omitempty" bson:"subject,omitempty"`
+	Type         string                 `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
+	Status       string                 `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
+	CreatedBy    map[string]interface{} `json:"createdBy,omitempty" bson:"createdBy,omitempty" binding:"required"`
+	CreatedAt    time.Time              `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
+	SendAt       time.Time              `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
 }
 
 //SiteService describe the Stats service
@@ -158,6 +161,7 @@ func (s *basicService) CreateNotification(
 		Subject:      subject,
 		Type:         typ,
 		Status:       "sending",
+		CreatedBy:    userSession["user"],
 	}
 
 	collection := s.DB.Collection("notifications")
