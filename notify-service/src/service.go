@@ -89,7 +89,7 @@ func getQueueName(typ string) string {
 	return queueName
 }
 
-func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) (interface{}, error) {
+func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
 
 	sess := session.New(&aws.Config{
 		Region: aws.String(utils.GetEnv("AWS_DEFAULT_REGION")),
@@ -106,7 +106,7 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) (
 		QueueName: aws.String(queueName),
 	})
 
-	result, err := svc.SendMessage(&sqs.SendMessageInput{
+	svc.SendMessage(&sqs.SendMessageInput{
 		DelaySeconds: aws.Int64(10),
 		MessageAttributes: map[string]*sqs.MessageAttributeValue{
 			"PhoneNumber": &sqs.MessageAttributeValue{
@@ -117,14 +117,6 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) (
 		MessageBody: aws.String(body),
 		QueueUrl:    aws.String(*confQueue.QueueUrl),
 	})
-
-	if err != nil {
-		fmt.Println("Error", err)
-	}
-
-	fmt.Println("succeed", *result.MessageId)
-	return *result.MessageId, nil
-
 }
 
 //GetNotif display notif list
