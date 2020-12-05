@@ -27,17 +27,16 @@ type NotificationRequest struct {
 
 //NotificationReply holds the response params for ListTables
 type NotificationReply struct {
-	Items []*Notification `json:"items"`
-	Err   error           `json:"err"`
+	Items []map[string]interface{} `json:"items"`
+	Err   error                    `json:"err"`
 }
 
 //CreateNotificationRequest holds the request params for ListTables
 type CreateNotificationRequest struct {
-	EmailAddress string
-	PhoneNumber  []string
-	Body         string
-	Subject      string
-	Type         string
+	Body       string
+	Subject    string
+	Type       string
+	Recipients []*NotificationRecipient
 }
 
 //CreateNotificationReply holds the response params for ListTables
@@ -56,7 +55,7 @@ func makeGetNotificationEndpoint(s SiteService) endpoint.Endpoint {
 func makeCreateNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNotificationRequest)
-		result, err := s.CreateNotification(ctx, req.EmailAddress, req.PhoneNumber, req.Body, req.Subject, req.Type)
+		result, err := s.CreateNotification(ctx, req.Body, req.Subject, req.Type, req.Recipients)
 		return CreateNotificationReply{Item: result, Err: err}, err
 	}
 }

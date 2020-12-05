@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/go-kit/kit/log"
 	"github.com/jabardigitalservice/jabarnotify-services/notify-service/src/utils"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -21,28 +22,34 @@ var userSession = make(map[string]map[string]interface{})
 
 //Notification schema
 type Notification struct {
-	ID           primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
-	EmailAddress string                 `json:"emailAddress,omitempty" bson:"emailAddress,omitempty"`
-	PhoneNumber  string                 `json:"phoneNumber,omitempty" bson:"phoneNumber,omitempty"`
-	Body         string                 `json:"body,omitempty" bson:"body,omitempty" binding:"required"`
-	Subject      string                 `json:"subject,omitempty" bson:"subject,omitempty"`
-	Type         string                 `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
-	Status       string                 `json:"status,omitempty" bson:"status,omitempty" binding:"required"`
-	CreatedBy    map[string]interface{} `json:"createdBy,omitempty" bson:"createdBy,omitempty" binding:"required"`
-	CreatedAt    time.Time              `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
-	SendAt       time.Time              `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
+	ID             primitive.ObjectID     `json:"_id,omitempty" bson:"_id,omitempty"`
+	Body           string                 `json:"body,omitempty" bson:"body,omitempty" binding:"required"`
+	Subject        string                 `json:"subject,omitempty" bson:"subject,omitempty"`
+	Type           string                 `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
+	RecipientTotal int                    `json:"recipientTotal,omitempty" bson:"recipientTotal,omitempty"`
+	CreatedBy      map[string]interface{} `json:"createdBy,omitempty" bson:"createdBy,omitempty" binding:"required"`
+	CreatedAt      time.Time              `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
+}
+
+//NotificationRecipient schema
+type NotificationRecipient struct {
+	ID             primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	NotificationID primitive.ObjectID `json:"body,notificationId" bson:"notificationId,omitempty" binding:"required"`
+	Name           string             `json:"name,omitempty" bson:"name,omitempty"`
+	EmailAddress   string             `json:"emailAddress,omitempty" bson:"emailAddress,omitempty"`
+	PhoneNumber    string             `json:"phoneNumber,omitempty" bson:"phoneNumber,omitempty"`
+	Status         string             `json:"status,omitempty" bson:"status,omitempty"`
+	SendAt         time.Time          `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
 }
 
 //SiteService describe the Stats service
 type SiteService interface {
-	GetNotification(ctx context.Context) ([]*Notification, error)
-	CreateNotification(
-		ctx context.Context,
-		emailAddress string,
-		phoneNumber []string,
+	GetNotification(ctx context.Context) ([]map[string]interface{}, error)
+	CreateNotification(ctx context.Context,
 		body string,
 		subject string,
-		typ string) (*Notification, error)
+		typ string,
+		recipients []*NotificationRecipient) (*Notification, error)
 }
 
 // NewSiteService returns a basic StatsService with all of the expected middlewares wired in.
@@ -120,20 +127,27 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
 }
 
 //GetNotif display notif list
-func (s *basicService) GetNotification(ctx context.Context) ([]*Notification, error) {
+func (s *basicService) GetNotification(ctx context.Context) ([]map[string]interface{}, error) {
 	collection := s.DB.Collection("notifications")
+	sortStage := bson.D{{"$sort", bson.D{{"createdAt", -1}}}}
 
-	result, err := collection.Aggregate(ctx, mongo.Pipeline{})
-
+	result, err := collection.Aggregate(ctx, mongo.Pipeline{sortStage})
+	fmt.Println(result)
 	if err != nil {
 		panic(err)
 	}
 
-	var data []*Notification
+	var data []map[string]interface{}
 
 	if err = result.All(ctx, &data); err != nil {
 		panic(err)
 	}
+
+	var showsLoaded []bson.M
+	if err = result.All(ctx, &showsLoaded); err != nil {
+		panic(err)
+	}
+	fmt.Println(showsLoaded)
 
 	return data, nil
 }
@@ -141,19 +155,17 @@ func (s *basicService) GetNotification(ctx context.Context) ([]*Notification, er
 //CreateNotif display notif list
 func (s *basicService) CreateNotification(
 	ctx context.Context,
-	emailAddress string,
-	phoneNumber []string,
 	body string,
 	subject string,
-	typ string) (*Notification, error) {
+	typ string,
+	recipients []*NotificationRecipient) (*Notification, error) {
 	notification := &Notification{
-		EmailAddress: emailAddress,
-		PhoneNumber:  strings.Join(phoneNumber, ","),
-		Body:         body,
-		Subject:      subject,
-		Type:         typ,
-		Status:       "sending",
-		CreatedBy:    userSession["user"],
+		Body:           body,
+		Subject:        subject,
+		Type:           typ,
+		RecipientTotal: len(recipients),
+		CreatedBy:      userSession["user"],
+		CreatedAt:      time.Now(),
 	}
 
 	collection := s.DB.Collection("notifications")
@@ -165,12 +177,28 @@ func (s *basicService) CreateNotification(
 
 	queueName := getQueueName(typ)
 
-	if queueName == "" || len(phoneNumber) < 1 {
+	if queueName == "" || len(recipients) < 1 {
 		return nil, ErrRequest
 	}
 
-	for _, n := range phoneNumber {
-		pushNotifToPhoneNumber(queueName, n, body)
+	for _, recipient := range recipients {
+
+		notificationRecipient := &NotificationRecipient{
+			NotificationID: insertResult.InsertedID.(primitive.ObjectID),
+			Name:           recipient.Name,
+			EmailAddress:   recipient.EmailAddress,
+			PhoneNumber:    recipient.PhoneNumber,
+			Status:         "sent",
+		}
+
+		collection := s.DB.Collection("notificationrecipients")
+		collection.InsertOne(context.TODO(), notificationRecipient)
+
+		messg := body
+		messg = strings.ReplaceAll(messg, "{NAME}", recipient.Name)
+		messg = strings.ReplaceAll(messg, "{PHONE_NUMBER}", recipient.PhoneNumber)
+
+		pushNotifToPhoneNumber(queueName, recipient.PhoneNumber, messg)
 	}
 
 	fmt.Printf("type %T", insertResult)

@@ -101,13 +101,17 @@ func decodeImportNotifRequest(_ context.Context, r *http.Request) (request inter
 		return nil, err
 	}
 
-	var phoneNumbers []string
+	var recipients []*NotificationRecipient
 	for _, row := range rows[1:] {
-		phoneNumbers = append(phoneNumbers, row[0])
+		if row[0] != "" {
+			recipients = append(recipients, &NotificationRecipient{
+				PhoneNumber: row[0],
+				Name:        row[1],
+			})
+		}
 	}
 
-	r.PostForm["phoneNumber"] = phoneNumbers
-
+	req.Recipients = recipients
 	if e := decoder.Decode(&req, r.PostForm); e != nil {
 		return nil, e
 	}
