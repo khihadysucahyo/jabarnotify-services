@@ -42,9 +42,17 @@ type NotificationRecipient struct {
 	SendAt         time.Time          `json:"sendAt,omitempty" bson:"sendAt,omitempty"`
 }
 
+//MetaData struct
+type MetaData struct {
+	TotalCount  int `json:"totalCount"`
+	TotalPage   int `json:"totalPage"`
+	CurrentPage int `json:"currentPage"`
+	PerPage     int `json:"perPage"`
+}
+
 //SiteService describe the Stats service
 type SiteService interface {
-	GetNotification(ctx context.Context) ([]map[string]interface{}, error)
+	GetNotification(ctx context.Context, page int, perPage int) ([]map[string]interface{}, *MetaData, error)
 	DetailNotification(ctx context.Context, id string) (map[string]interface{}, error)
 	CreateNotification(ctx context.Context,
 		body string,
@@ -128,11 +136,15 @@ func pushNotifToPhoneNumber(queueName string, phoneNumber string, body string) {
 }
 
 //GetNotif display notif list
-func (s *basicService) GetNotification(ctx context.Context) ([]map[string]interface{}, error) {
+func (s *basicService) GetNotification(ctx context.Context, page int, perPage int) ([]map[string]interface{}, *MetaData, error) {
 	collection := s.DB.Collection("notifications")
-	sortStage := bson.D{{"$sort", bson.D{{"createdAt", -1}}}}
 
-	result, err := collection.Aggregate(ctx, mongo.Pipeline{sortStage})
+	offset := (page - 1) * perPage
+	sortStage := bson.D{{"$sort", bson.D{{"createdAt", -1}}}}
+	skipStage := bson.D{{"$skip", offset}}
+	limitStage := bson.D{{"$limit", perPage}}
+
+	result, err := collection.Aggregate(ctx, mongo.Pipeline{sortStage, skipStage, limitStage})
 	fmt.Println(result)
 	if err != nil {
 		panic(err)
@@ -144,7 +156,19 @@ func (s *basicService) GetNotification(ctx context.Context) ([]map[string]interf
 		panic(err)
 	}
 
-	return data, nil
+	total, err := collection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		panic(err)
+	}
+
+	metaData := &MetaData{
+		TotalCount:  int(total),
+		TotalPage:   utils.PageCount(int(total), int(perPage)),
+		CurrentPage: int(page),
+		PerPage:     int(perPage),
+	}
+
+	return data, metaData, nil
 }
 
 //DetailNotification display notif list

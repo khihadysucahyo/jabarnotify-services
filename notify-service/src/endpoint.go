@@ -24,13 +24,16 @@ func MakeSiteEndpoints(s SiteService) Endpoints {
 
 //NotificationRequest holds the request params for ListTables
 type NotificationRequest struct {
-	ID     string
-	Method string
+	ID      string
+	Method  string
+	Page    int
+	PerPage int
 }
 
 //NotificationReply holds the response params for ListTables
 type NotificationReply struct {
 	Items []map[string]interface{} `json:"items"`
+	Meta  *MetaData                `json:"meta"`
 	Err   error                    `json:"err"`
 }
 
@@ -56,8 +59,9 @@ type DetailNotificationReply struct {
 
 func makeGetNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		res, err := s.GetNotification(ctx)
-		return NotificationReply{Items: res, Err: err}, err
+		req := request.(NotificationRequest)
+		res, meta, err := s.GetNotification(ctx, req.Page, req.PerPage)
+		return NotificationReply{Items: res, Meta: meta, Err: err}, err
 	}
 }
 

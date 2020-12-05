@@ -15,6 +15,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	// DefaultLimit defines the default number of items per page for API responses
+	DefaultLimit int = 25
+)
+
 //GetEnv func
 func GetEnv(key string) string {
 	// load .env file
@@ -89,4 +94,18 @@ func ExtractSheet(r *http.Request, requestFile string) ([][]string, error) {
 	os.Remove(filepath)
 
 	return rows, nil
+}
+
+//PageCount func
+func PageCount(total int, limit int) int {
+	if limit == 0 {
+		limit = DefaultLimit
+	}
+	pages := total / limit
+
+	if total%limit > 0 {
+		pages++
+	}
+
+	return pages
 }

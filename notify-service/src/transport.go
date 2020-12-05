@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -78,6 +79,18 @@ func decodeGetNotifRequest(_ context.Context, r *http.Request) (request interfac
 	}
 
 	var req NotificationRequest
+	perPage, err := strconv.Atoi(r.URL.Query().Get("perPage"))
+	if err != nil || perPage < 1 {
+		perPage = utils.DefaultLimit
+	}
+	req.PerPage = perPage
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	req.Page = page
 	return req, nil
 }
 
