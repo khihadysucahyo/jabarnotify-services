@@ -28,6 +28,13 @@ func (mw loggingMiddleware) GetNotification(ctx context.Context) (t []map[string
 	return mw.next.GetNotification(ctx)
 }
 
+func (mw loggingMiddleware) DetailNotification(ctx context.Context, id string) (t map[string]interface{}, err error) {
+	defer func() {
+		mw.logger.Log("method", "GetNotification", "notif", "", "err", err)
+	}()
+	return mw.next.DetailNotification(ctx, id)
+}
+
 func (mw loggingMiddleware) CreateNotification(
 	ctx context.Context,
 	body string,

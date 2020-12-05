@@ -61,6 +61,13 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		options...,
 	))
 
+	r.Methods("GET").Path("/notifications/{id}").Handler(kithttp.NewServer(
+		siteEndpoints.DetailNotification,
+		decodeDetailNotifRequest,
+		encodeResponse,
+		options...,
+	))
+
 	r.Use(cors)
 	return r
 }
@@ -117,6 +124,15 @@ func decodeImportNotifRequest(_ context.Context, r *http.Request) (request inter
 	}
 
 	return req, nil
+}
+
+func decodeDetailNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	return NotificationRequest{ID: id}, nil
 }
 
 type errorer interface {

@@ -45,6 +45,7 @@ type NotificationRecipient struct {
 //SiteService describe the Stats service
 type SiteService interface {
 	GetNotification(ctx context.Context) ([]map[string]interface{}, error)
+	DetailNotification(ctx context.Context, id string) (map[string]interface{}, error)
 	CreateNotification(ctx context.Context,
 		body string,
 		subject string,
@@ -143,13 +144,30 @@ func (s *basicService) GetNotification(ctx context.Context) ([]map[string]interf
 		panic(err)
 	}
 
-	var showsLoaded []bson.M
-	if err = result.All(ctx, &showsLoaded); err != nil {
+	return data, nil
+}
+
+//DetailNotification display notif list
+func (s *basicService) DetailNotification(ctx context.Context, id string) (map[string]interface{}, error) {
+	_id, _ := primitive.ObjectIDFromHex(id)
+
+	collection := s.DB.Collection("notifications")
+	matchStage := bson.D{{"$match", bson.D{{"_id", _id}}}}
+	lookupStage := bson.D{{"$lookup", bson.D{{"from", "notificationrecipients"}, {"localField", "_id"}, {"foreignField", "notificationId"}, {"as", "recipients"}}}}
+
+	result, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, lookupStage})
+	fmt.Println(result)
+	if err != nil {
 		panic(err)
 	}
-	fmt.Println(showsLoaded)
 
-	return data, nil
+	var data []map[string]interface{}
+
+	if err = result.All(ctx, &data); err != nil {
+		panic(err)
+	}
+
+	return data[0], nil
 }
 
 //CreateNotif display notif list
