@@ -62,7 +62,7 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		options...,
 	))
 
-	r.Methods("GET").Path("/notifications/{id}").Handler(kithttp.NewServer(
+	r.Methods("GET", "OPTIONS").Path("/notifications/{id}").Handler(kithttp.NewServer(
 		siteEndpoints.DetailNotification,
 		decodeDetailNotifRequest,
 		encodeResponse,
@@ -79,7 +79,7 @@ func decodeGetNotifRequest(_ context.Context, r *http.Request) (request interfac
 	}
 
 	var req NotificationRequest
-	perPage, err := strconv.Atoi(r.URL.Query().Get("perPage"))
+	perPage, err := strconv.Atoi(r.URL.Query().Get("per_page"))
 	if err != nil || perPage < 1 {
 		perPage = utils.DefaultLimit
 	}
@@ -123,10 +123,10 @@ func decodeImportNotifRequest(_ context.Context, r *http.Request) (request inter
 
 	var recipients []*NotificationRecipient
 	for _, row := range rows[1:] {
-		if row[0] != "" {
+		if row[0] != "" && row[1] != "" {
 			recipients = append(recipients, &NotificationRecipient{
-				PhoneNumber: row[0],
-				Name:        row[1],
+				Name:        row[0],
+				PhoneNumber: row[1],
 			})
 		}
 	}
