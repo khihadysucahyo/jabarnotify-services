@@ -26,7 +26,7 @@ func main() {
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 	logger = log.With(logger, "caller", log.DefaultCaller)
 
-	level.Info(logger).Log("msg", "service started")
+	level.Info(logger).Log("msg", "service started v0.1")
 	defer level.Info(logger).Log("msg", "service ended")
 
 	addservice := NewSiteService(logger)

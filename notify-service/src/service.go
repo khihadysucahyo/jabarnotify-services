@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -223,26 +224,32 @@ func (s *basicService) CreateNotification(
 		return nil, ErrRequest
 	}
 
+	var notificationRecipients []interface{}
 	for _, recipient := range recipients {
-
-		notificationRecipient := &NotificationRecipient{
+		recipient := &NotificationRecipient{
 			NotificationID: insertResult.InsertedID.(primitive.ObjectID),
 			Name:           recipient.Name,
 			EmailAddress:   recipient.EmailAddress,
 			PhoneNumber:    recipient.PhoneNumber,
 			Status:         "sent",
 		}
-
-		collection := s.DB.Collection("notificationrecipients")
-		collection.InsertOne(context.TODO(), notificationRecipient)
-
-		messg := body
-		messg = strings.ReplaceAll(messg, "{NAME}", recipient.Name)
-		messg = strings.ReplaceAll(messg, "{PHONE_NUMBER}", recipient.PhoneNumber)
-
-		pushNotifToPhoneNumber(queueName, recipient.PhoneNumber, messg)
+		notificationRecipients = append(notificationRecipients, recipient)
 	}
 
-	fmt.Printf("type %T", insertResult)
+	s.DB.Collection("notificationrecipients").InsertMany(context.TODO(), notificationRecipients)
+
+	errs := make(chan error)
+	go func() {
+		c := make(chan os.Signal)
+		for _, recipient := range recipients {
+			messg := body
+			messg = strings.ReplaceAll(messg, "{NAME}", recipient.Name)
+			messg = strings.ReplaceAll(messg, "{PHONE_NUMBER}", recipient.PhoneNumber)
+
+			pushNotifToPhoneNumber(queueName, recipient.PhoneNumber, messg)
+		}
+		errs <- fmt.Errorf("%s", <-c)
+	}()
+
 	return notification, nil
 }
