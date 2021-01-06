@@ -28,6 +28,7 @@ type Notification struct {
 	Subject        string                 `json:"subject,omitempty" bson:"subject,omitempty"`
 	Type           string                 `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
 	RecipientTotal int                    `json:"recipientTotal,omitempty" bson:"recipientTotal,omitempty"`
+	Status         string                 `json:"status,omitempty" bson:"status,omitempty"`
 	CreatedBy      map[string]interface{} `json:"createdBy,omitempty" bson:"createdBy,omitempty" binding:"required"`
 	CreatedAt      time.Time              `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
 }
@@ -55,6 +56,7 @@ type MetaData struct {
 type SiteService interface {
 	GetNotification(ctx context.Context, page int, perPage int) ([]map[string]interface{}, *MetaData, error)
 	DetailNotification(ctx context.Context, id string) (map[string]interface{}, error)
+	GetNotificationSummary(ctx context.Context) (map[string]interface{}, error)
 	CreateNotification(ctx context.Context,
 		body string,
 		subject string,
@@ -207,6 +209,7 @@ func (s *basicService) CreateNotification(
 		Subject:        subject,
 		Type:           typ,
 		RecipientTotal: len(recipients),
+		Status:         "sent",
 		CreatedBy:      userSession["user"],
 		CreatedAt:      time.Now(),
 	}
@@ -252,4 +255,29 @@ func (s *basicService) CreateNotification(
 	}()
 
 	return notification, nil
+}
+
+// GetNotificationSummary func
+func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]interface{}, error) {
+	collection := s.DB.Collection("notifications")
+
+	getCountDocuments := func(typ string, stat string) int64 {
+		total, _ := collection.CountDocuments(ctx, bson.M{
+			"type":   typ,
+			"status": stat,
+		})
+
+		return total
+	}
+
+	data := map[string]interface{}{
+		"smsSent":        getCountDocuments("sms", "sent"),
+		"smsFailed":      getCountDocuments("sms", "failed"),
+		"whatsappSent":   getCountDocuments("whatsapp", "sent"),
+		"whatsappFailed": getCountDocuments("whatsapp", "failed"),
+		"emailSent":      getCountDocuments("email", "sent"),
+		"emailFailed":    getCountDocuments("email", "failed"),
+	}
+
+	return data, nil
 }

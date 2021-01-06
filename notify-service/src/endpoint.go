@@ -8,17 +8,19 @@ import (
 
 //Endpoints holds all Stats Service enpoints
 type Endpoints struct {
-	GetNotification    endpoint.Endpoint
-	CreateNotification endpoint.Endpoint
-	DetailNotification endpoint.Endpoint
+	GetNotification        endpoint.Endpoint
+	GetNotificationSummary endpoint.Endpoint
+	CreateNotification     endpoint.Endpoint
+	DetailNotification     endpoint.Endpoint
 }
 
 //MakeSiteEndpoints initialize all service Endpoints
 func MakeSiteEndpoints(s SiteService) Endpoints {
 	return Endpoints{
-		GetNotification:    makeGetNotificationEndpoint(s),
-		CreateNotification: makeCreateNotificationEndpoint(s),
-		DetailNotification: makeDetailNotificationEndpoint(s),
+		GetNotification:        makeGetNotificationEndpoint(s),
+		GetNotificationSummary: makeGetNotificationSummaryEndpoint(s),
+		CreateNotification:     makeCreateNotificationEndpoint(s),
+		DetailNotification:     makeDetailNotificationEndpoint(s),
 	}
 }
 
@@ -77,6 +79,13 @@ func makeDetailNotificationEndpoint(s SiteService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(NotificationRequest)
 		res, err := s.DetailNotification(ctx, req.ID)
+		return DetailNotificationReply{Item: res, Err: err}, err
+	}
+}
+
+func makeGetNotificationSummaryEndpoint(s SiteService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		res, err := s.GetNotificationSummary(ctx)
 		return DetailNotificationReply{Item: res, Err: err}, err
 	}
 }
