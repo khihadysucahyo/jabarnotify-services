@@ -62,6 +62,13 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		options...,
 	))
 
+	r.Methods("GET").Path("/notifications/summary").Handler(kithttp.NewServer(
+		siteEndpoints.GetNotificationSummary,
+		decodeGetNotifRequest,
+		encodeResponse,
+		options...,
+	))
+
 	r.Methods("GET", "OPTIONS").Path("/notifications/{id}").Handler(kithttp.NewServer(
 		siteEndpoints.DetailNotification,
 		decodeDetailNotifRequest,
