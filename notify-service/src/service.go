@@ -270,13 +270,18 @@ func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]i
 		return total
 	}
 
+	getSummaryByNotifType := func(typ string) map[string]interface{} {
+		summary := map[string]interface{}{
+			"sent":   getCountDocuments(typ, "sent"),
+			"failed": getCountDocuments(typ, "failed"),
+		}
+		return summary
+	}
+
 	data := map[string]interface{}{
-		"smsSent":        getCountDocuments("sms", "sent"),
-		"smsFailed":      getCountDocuments("sms", "failed"),
-		"whatsappSent":   getCountDocuments("whatsapp", "sent"),
-		"whatsappFailed": getCountDocuments("whatsapp", "failed"),
-		"emailSent":      getCountDocuments("email", "sent"),
-		"emailFailed":    getCountDocuments("email", "failed"),
+		"sms":      getSummaryByNotifType("sms"),
+		"whatsapp": getSummaryByNotifType("whatsapp"),
+		"email":    getSummaryByNotifType("email"),
 	}
 
 	return data, nil
