@@ -54,6 +54,7 @@ type MetaData struct {
 
 //SiteService describe the Stats service
 type SiteService interface {
+	HealthCheck(ctx context.Context) (map[string]interface{}, error)
 	GetNotification(ctx context.Context, page int, perPage int) ([]map[string]interface{}, *MetaData, error)
 	DetailNotification(ctx context.Context, id string) (map[string]interface{}, error)
 	GetNotificationSummary(ctx context.Context) (map[string]interface{}, error)
@@ -285,4 +286,19 @@ func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]i
 	}
 
 	return data, nil
+}
+
+// HealthCheck func
+func (s *basicService) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+
+	result := map[string]interface{}{
+		"app":    utils.GetEnv("APP_NAME"),
+		"server": hostname,
+	}
+	return result, nil
 }
