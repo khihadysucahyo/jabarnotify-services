@@ -8,6 +8,7 @@ import (
 
 //Endpoints holds all Stats Service enpoints
 type Endpoints struct {
+	HealthCheck            endpoint.Endpoint
 	GetNotification        endpoint.Endpoint
 	GetNotificationSummary endpoint.Endpoint
 	CreateNotification     endpoint.Endpoint
@@ -17,6 +18,7 @@ type Endpoints struct {
 //MakeSiteEndpoints initialize all service Endpoints
 func MakeSiteEndpoints(s SiteService) Endpoints {
 	return Endpoints{
+		HealthCheck:            makeHealthCheckEndpoint(s),
 		GetNotification:        makeGetNotificationEndpoint(s),
 		GetNotificationSummary: makeGetNotificationSummaryEndpoint(s),
 		CreateNotification:     makeCreateNotificationEndpoint(s),
@@ -57,6 +59,13 @@ type CreateNotificationReply struct {
 type DetailNotificationReply struct {
 	Item map[string]interface{} `json:"item"`
 	Err  error                  `json:"err"`
+}
+
+func makeHealthCheckEndpoint(s SiteService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		res, err := s.HealthCheck(ctx)
+		return res, err
+	}
 }
 
 func makeGetNotificationEndpoint(s SiteService) endpoint.Endpoint {

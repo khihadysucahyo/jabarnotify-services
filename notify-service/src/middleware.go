@@ -21,6 +21,13 @@ type loggingMiddleware struct {
 	next   SiteService
 }
 
+func (mw loggingMiddleware) HealthCheck(ctx context.Context) (t map[string]interface{}, err error) {
+	defer func() {
+		mw.logger.Log("method", "HealthCheck", "notif", "", "err", err)
+	}()
+	return mw.next.HealthCheck(ctx)
+}
+
 func (mw loggingMiddleware) GetNotification(ctx context.Context, page int, perPage int) (t []map[string]interface{}, meta *MetaData, err error) {
 	defer func() {
 		mw.logger.Log("method", "GetNotification", "notif", "", "err", err)
