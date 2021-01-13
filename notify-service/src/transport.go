@@ -41,7 +41,7 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	r.Methods("GET").Path("/").Handler(kithttp.NewServer(
+	r.Methods("GET").Path("/health").Handler(kithttp.NewServer(
 		siteEndpoints.HealthCheck,
 		decodeRequest,
 		encodeResponse,
