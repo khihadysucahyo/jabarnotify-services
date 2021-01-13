@@ -291,14 +291,8 @@ func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]i
 // HealthCheck func
 func (s *basicService) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-
 	result := map[string]interface{}{
-		"app":    utils.GetEnv("APP_NAME"),
-		"server": hostname,
+		"status": "Service Available",
 	}
 	return result, nil
 }
