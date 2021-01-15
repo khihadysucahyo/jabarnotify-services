@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var userSession = make(map[string]map[string]interface{})
@@ -94,6 +95,8 @@ var (
 	ErrUnauthorized = errors.New("Unauthorized")
 	//ErrExpiredToken handle expiredToken
 	ErrExpiredToken = errors.New("Token is expired")
+	//ErrServiceUnavailable exception
+	ErrServiceUnavailable = errors.New("Service Unavailable")
 )
 
 func getQueueName(typ string) string {
@@ -290,6 +293,11 @@ func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]i
 
 // HealthCheck func
 func (s *basicService) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
+	res := s.DB.RunCommand(ctx, bson.D{{"ping", 1}}, options.RunCmd())
+
+	if res.Err() != nil {
+		return nil, ErrServiceUnavailable
+	}
 
 	result := map[string]interface{}{
 		"status": "Service Available",
