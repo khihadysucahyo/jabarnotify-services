@@ -194,6 +194,8 @@ func codeFrom(err error) int {
 		return http.StatusUnauthorized
 	case ErrExpiredToken:
 		return http.StatusUnauthorized
+	case ErrServiceUnavailable:
+		return http.StatusServiceUnavailable
 	default:
 		return http.StatusInternalServerError
 	}
