@@ -23,7 +23,7 @@ jobs:
       working-directory: ./notify-service/src
 
     - name: Test
-      run: go test -v ./service_test.go
+      run: go test -v .
       working-directory: ./notify-service/src
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
