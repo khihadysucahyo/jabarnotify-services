@@ -30,3 +30,12 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
+    
+    - name: Coverage
+      uses: paambaati/codeclimate-action@v2.7.5
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
+      with:
+        coverageCommand: go test ./... -coverprofile c.out
+        prefix: ${{ secrets.PREFIX }}
+    
