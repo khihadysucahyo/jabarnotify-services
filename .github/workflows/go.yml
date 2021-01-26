@@ -40,8 +40,8 @@ jobs:
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
       with:
-        coverageCommand: go test ./... -coverprofile c.out
-        workingDirectory: ./notify-service
+        coverageCommand: go test . -coverprofile c.out
+        workingDirectory: ./notify-service/src
         prefix: github.com/khihadysucahyo/jabarnotify-services
         debug: true
     
