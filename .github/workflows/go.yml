@@ -41,6 +41,7 @@ jobs:
         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
       with:
         coverageCommand: go test ./... -coverprofile c.out
+        workingDirectory: ./notify-service
         prefix: github.com/khihadysucahyo/jabarnotify-services/notify-service
         debug: true
     
