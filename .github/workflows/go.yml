@@ -19,8 +19,8 @@ jobs:
         go-version: 1.15
 
     - name: Build
-      run: go build -v ./...
-      working-directory: ./notify-service/src
+      run: go mod download && go build -v ./...
+      working-directory: ./notify-service
 
 #     - name: Test
 #       run: go test -v ./service_test.go
@@ -40,8 +40,5 @@ jobs:
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
       with:
-        coverageCommand: go test . -coverprofile c.out
-        workingDirectory: ./notify-service/src
-        coverageLocations: "${{ github.workspace }}/notify-service/src/c.out:gocov"
-        debug: false
-    
+        coverageCommand: go test ./... -coverprofile c.out
+        workingDirectory: ./notify-service    
