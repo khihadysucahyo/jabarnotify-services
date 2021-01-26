@@ -42,6 +42,5 @@ jobs:
       with:
         coverageCommand: go test . -coverprofile c.out
         workingDirectory: ./notify-service/src
-        prefix: github.com/jabardigitalservice/jabarnotify-services
         debug: false
     
