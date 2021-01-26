@@ -42,4 +42,4 @@ jobs:
       with:
         coverageCommand: go test ./... -coverprofile c.out
         workingDirectory: ./notify-service
-        prefix: github.com/jabardigitalservice/jabarnotify-services
+        prefix: github.com/khihadysucahyo/jabarnotify-services
