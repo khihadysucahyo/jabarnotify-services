@@ -41,6 +41,13 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
+	r.Methods("GET").Path("/health").Handler(kithttp.NewServer(
+		siteEndpoints.HealthCheck,
+		decodeRequest,
+		encodeResponse,
+		options...,
+	))
+
 	r.Methods("GET").Path("/notifications").Handler(kithttp.NewServer(
 		siteEndpoints.GetNotification,
 		decodeGetNotifRequest,
@@ -58,6 +65,13 @@ func MakeHTTPHandler(siteEndpoints Endpoints, logger log.Logger) http.Handler {
 	r.Methods("POST", "OPTIONS").Path("/notifications/import").Handler(kithttp.NewServer(
 		siteEndpoints.CreateNotification,
 		decodeImportNotifRequest,
+		encodeResponse,
+		options...,
+	))
+
+	r.Methods("GET").Path("/notifications/summary").Handler(kithttp.NewServer(
+		siteEndpoints.GetNotificationSummary,
+		decodeGetNotifRequest,
 		encodeResponse,
 		options...,
 	))
@@ -92,6 +106,10 @@ func decodeGetNotifRequest(_ context.Context, r *http.Request) (request interfac
 
 	req.Page = page
 	return req, nil
+}
+
+func decodeRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	return request, nil
 }
 
 func decodeCreateNotifRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -176,6 +194,8 @@ func codeFrom(err error) int {
 		return http.StatusUnauthorized
 	case ErrExpiredToken:
 		return http.StatusUnauthorized
+	case ErrServiceUnavailable:
+		return http.StatusServiceUnavailable
 	default:
 		return http.StatusInternalServerError
 	}

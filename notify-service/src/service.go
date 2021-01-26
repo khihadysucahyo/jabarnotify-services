@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var userSession = make(map[string]map[string]interface{})
@@ -28,6 +29,7 @@ type Notification struct {
 	Subject        string                 `json:"subject,omitempty" bson:"subject,omitempty"`
 	Type           string                 `json:"type,omitempty" bson:"type,omitempty" binding:"required"`
 	RecipientTotal int                    `json:"recipientTotal,omitempty" bson:"recipientTotal,omitempty"`
+	Status         string                 `json:"status,omitempty" bson:"status,omitempty"`
 	CreatedBy      map[string]interface{} `json:"createdBy,omitempty" bson:"createdBy,omitempty" binding:"required"`
 	CreatedAt      time.Time              `json:"createdAt,omitempty" bson:"createdAt,omitempty" binding:"required"`
 }
@@ -53,8 +55,10 @@ type MetaData struct {
 
 //SiteService describe the Stats service
 type SiteService interface {
+	HealthCheck(ctx context.Context) (map[string]interface{}, error)
 	GetNotification(ctx context.Context, page int, perPage int) ([]map[string]interface{}, *MetaData, error)
 	DetailNotification(ctx context.Context, id string) (map[string]interface{}, error)
+	GetNotificationSummary(ctx context.Context) (map[string]interface{}, error)
 	CreateNotification(ctx context.Context,
 		body string,
 		subject string,
@@ -91,6 +95,8 @@ var (
 	ErrUnauthorized = errors.New("Unauthorized")
 	//ErrExpiredToken handle expiredToken
 	ErrExpiredToken = errors.New("Token is expired")
+	//ErrServiceUnavailable exception
+	ErrServiceUnavailable = errors.New("Service Unavailable")
 )
 
 func getQueueName(typ string) string {
@@ -207,6 +213,7 @@ func (s *basicService) CreateNotification(
 		Subject:        subject,
 		Type:           typ,
 		RecipientTotal: len(recipients),
+		Status:         "sent",
 		CreatedBy:      userSession["user"],
 		CreatedAt:      time.Now(),
 	}
@@ -252,4 +259,48 @@ func (s *basicService) CreateNotification(
 	}()
 
 	return notification, nil
+}
+
+// GetNotificationSummary func
+func (s *basicService) GetNotificationSummary(ctx context.Context) (map[string]interface{}, error) {
+	collection := s.DB.Collection("notifications")
+
+	getCountDocuments := func(typ string, stat string) int64 {
+		total, _ := collection.CountDocuments(ctx, bson.M{
+			"type":   typ,
+			"status": stat,
+		})
+
+		return total
+	}
+
+	getSummaryByNotifType := func(typ string) map[string]interface{} {
+		summary := map[string]interface{}{
+			"sent":   getCountDocuments(typ, "sent"),
+			"failed": getCountDocuments(typ, "failed"),
+		}
+		return summary
+	}
+
+	data := map[string]interface{}{
+		"sms":      getSummaryByNotifType("sms"),
+		"whatsapp": getSummaryByNotifType("whatsapp"),
+		"email":    getSummaryByNotifType("email"),
+	}
+
+	return data, nil
+}
+
+// HealthCheck func
+func (s *basicService) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
+	res := s.DB.RunCommand(ctx, bson.D{{"ping", 1}}, options.RunCmd())
+
+	if res.Err() != nil {
+		return nil, ErrServiceUnavailable
+	}
+
+	result := map[string]interface{}{
+		"status": "Service Available",
+	}
+	return result, nil
 }
