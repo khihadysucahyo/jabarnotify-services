@@ -35,7 +35,7 @@ func TestSendWhatsapp(t *testing.T) {
 				StringValue: aws.String(utils.GetEnv("PHONE_NUMBER_TESTER")),
 			},
 		},
-		MessageBody: aws.String("running go test: send whatsapp passed"),
+		MessageBody: aws.String("Running go test: send whatsapp passed"),
 		QueueUrl:    aws.String(*confQueue.QueueUrl),
 	})
 
