@@ -37,5 +37,5 @@ jobs:
         CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
       with:
         coverageCommand: go test ./... -coverprofile c.out
-        prefix: ${{ secrets.PREFIX }}
+        workingDirectory: ./notify-service
     
