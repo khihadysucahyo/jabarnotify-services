@@ -42,5 +42,6 @@ jobs:
       with:
         coverageCommand: go test . -coverprofile c.out
         workingDirectory: ./notify-service/src
+        coverageLocations: "${{ github.workspace }}/notify-service/src/c.out:gocov"
         debug: false
     
