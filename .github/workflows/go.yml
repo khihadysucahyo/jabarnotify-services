@@ -22,24 +22,18 @@ jobs:
       run: go mod download && go build -v ./...
       working-directory: ./notify-service
 
-#     - name: Test
-#       run: go test -v ./service_test.go
-#       working-directory: ./notify-service/src
-#       env:
-#         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-#         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
-    
-    - name: Test
-      uses: paambaati/codeclimate-action@v2.7.5
+    - name: Go Test
+      run: go test ./... -coverprofile c.out
+      working-directory: ./notify-service/src
       env:
-        CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
-      with:
-        coverageCommand: go test ./... -coverprofile c.out
-        workingDirectory: ./notify-service
-        prefix: github.com/khihadysucahyo/jabarnotify-services
+
+    - name: Report Coverage to Codeclimate
+      working-directory: ./notify-service
+      run: |
+        curl --location --silent https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter after-build --exit-code 0 -r ${{ secrets.TEST_REPORTER_ID }} -t gocov -p $(go list -m)
