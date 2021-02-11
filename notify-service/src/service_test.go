@@ -1,44 +1,30 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jabardigitalservice/jabarnotify-services/notify-service/src/utils"
-	"github.com/stretchr/testify/require"
 )
 
-func TestSendWhatsapp(t *testing.T) {
-	sess := session.New(&aws.Config{
-		Region: aws.String(utils.GetEnv("AWS_DEFAULT_REGION")),
-		Credentials: credentials.NewStaticCredentials(
-			utils.GetEnv("AWS_ACCESS_KEY_ID"),
-			utils.GetEnv("AWS_SECRET_ACCESS_KEY"), "",
-		),
-		MaxRetries: aws.Int(5),
-	})
-
-	svc := sqs.New(sess)
-
-	confQueue, _ := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName: aws.String("wablast-queue"),
-	})
-
-	res, err := svc.SendMessage(&sqs.SendMessageInput{
-		DelaySeconds: aws.Int64(10),
-		MessageAttributes: map[string]*sqs.MessageAttributeValue{
-			"PhoneNumber": &sqs.MessageAttributeValue{
-				DataType:    aws.String("String"),
-				StringValue: aws.String(utils.GetEnv("PHONE_NUMBER_TESTER")),
-			},
+func TestCreateNotification(t *testing.T) {
+	// payload
+	typ := "whatsapp"
+	body := "Running Go test: send whatsapp passed"
+	recipients := []*NotificationRecipient{
+		&NotificationRecipient{
+			Name:        "GO TEST",
+			PhoneNumber: utils.GetEnv("PHONE_NUMBER_TESTER"),
 		},
-		MessageBody: aws.String("Running go test: send whatsapp passed"),
-		QueueUrl:    aws.String(*confQueue.QueueUrl),
-	})
+	}
 
-	require.NoError(t, err)
-	require.NotNil(t, res)
+	queueName := getQueueName(typ)
+
+	for _, recipient := range recipients {
+		messg := body
+		messg = strings.ReplaceAll(messg, "{NAME}", recipient.Name)
+		messg = strings.ReplaceAll(messg, "{PHONE_NUMBER}", recipient.PhoneNumber)
+
+		// pushNotifToPhoneNumber(queueName, recipient.PhoneNumber, messg)
+	}
 }
