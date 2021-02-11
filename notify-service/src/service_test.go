@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -25,6 +26,7 @@ func TestCreateNotification(t *testing.T) {
 		messg = strings.ReplaceAll(messg, "{NAME}", recipient.Name)
 		messg = strings.ReplaceAll(messg, "{PHONE_NUMBER}", recipient.PhoneNumber)
 
+		fmt.Println(queueName)
 		// pushNotifToPhoneNumber(queueName, recipient.PhoneNumber, messg)
 	}
 }
