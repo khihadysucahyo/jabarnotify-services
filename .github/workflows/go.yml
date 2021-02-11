@@ -36,4 +36,4 @@ jobs:
       run: |
         curl --location --silent https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
         chmod +x ./cc-test-reporter
-        ./cc-test-reporter after-build --exit-code 0 -r ${{ secrets.TEST_REPORTER_ID }} -t gocov -p $(go list -m)
+        ./cc-test-reporter after-build --exit-code 0 -r ${{ secrets.TEST_REPORTER_ID }} -t gocov -p github.com/jabardigitalservice/jabarnotify-services/notify-service
