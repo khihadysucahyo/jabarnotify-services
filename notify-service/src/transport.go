@@ -221,6 +221,15 @@ func getKey(token *jwt.Token) (interface{}, error) {
 }
 
 func verifyToken(reqToken string) error {
+	// FIXME: TODO MOCKING
+	if utils.GetEnv("APP_ENV") == "testing" {
+		userSession["user"] = map[string]interface{}{
+			"_id":      "602a2711236839792fb415ec",
+			"username": "usertest",
+			"email":    "usertest@mail.com",
+		}
+		return nil
+	}
 
 	tokenString := strings.Replace(reqToken, "Bearer ", "", -1)
 	token, err := jwt.Parse(tokenString, getKey)
