@@ -1,0 +1,41 @@
+name: Go
+
+on:
+  pull_request:
+    branches:
+      - main
+      - development 
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.15
+
+    - name: Build
+      run: go build -v ./...
+      working-directory: ./notify-service/src
+
+    - name: Test
+      run: go test -v ./service_test.go
+      working-directory: ./notify-service/src
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        PHONE_NUMBER_TESTER: ${{ secrets.PHONE_NUMBER_TESTER }}
+    
+    - name: Coverage
+      uses: paambaati/codeclimate-action@v2.7.5
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.TEST_REPORTER_ID }}
+      with:
+        coverageCommand: go test ./... -coverprofile c.out
+        workingDirectory: ./notify-service
+    
