@@ -34,6 +34,7 @@ jobs:
       run: go test ./... -coverprofile c.out
       working-directory: ./notify-service/src
       env:
+        APP_ENV: testing
         DB_MONGO_HOST: localhost
         DB_MONGO_PORT: 27017
         DB_MONGO_NAME: notif-service
